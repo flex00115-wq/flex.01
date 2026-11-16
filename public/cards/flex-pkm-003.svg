@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" width="300" height="420">
+  <defs>
+    <linearGradient id="bg-flex-pkm-003" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="55%" stop-color="#EAB308"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="foil-flex-pkm-003" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="420" rx="18" fill="#0B0917"/>
+  <rect x="8" y="8" width="284" height="404" rx="14" fill="url(#bg-flex-pkm-003)" stroke="#38BDF8" stroke-width="4"/>
+  <rect x="18" y="18" width="264" height="384" rx="10" fill="url(#foil-flex-pkm-003)" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1.5"/>
+
+  <!-- Top Header Bar -->
+  <rect x="24" y="26" width="252" height="34" rx="8" fill="#0B0917" fill-opacity="0.72"/>
+  <text x="36" y="48" font-family="Outfit,sans-serif" font-weight="700" font-size="13" fill="#F8FAFC">POKEMON</text>
+  <text x="264" y="48" text-anchor="end" font-family="JetBrains Mono,monospace" font-weight="700" font-size="13" fill="#38BDF8">HP 120</text>
+
+  <!-- Artwork Frame -->
+  <rect x="26" y="68" width="248" height="202" rx="10" fill="#0B0917" fill-opacity="0.52" stroke="#38BDF8" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="150" cy="169" r="78" fill="#EAB308" fill-opacity="0.24"/>
+  <g opacity="0.9"><rect x="75" y="95" width="30" height="22" fill="#22D3EE"/><rect x="105" y="95" width="30" height="22" fill="#1E3A8A"/><rect x="135" y="95" width="30" height="22" fill="#22D3EE"/><rect x="165" y="95" width="30" height="22" fill="#1E3A8A"/><rect x="195" y="95" width="30" height="22" fill="#22D3EE"/><rect x="75" y="117" width="30" height="22" fill="#1E3A8A"/><rect x="105" y="117" width="30" height="22" fill="#22D3EE"/><rect x="135" y="117" width="30" height="22" fill="#1E3A8A"/><rect x="165" y="117" width="30" height="22" fill="#22D3EE"/><rect x="195" y="117" width="30" height="22" fill="#1E3A8A"/><rect x="75" y="139" width="30" height="22" fill="#22D3EE"/><rect x="105" y="139" width="30" height="22" fill="#1E3A8A"/><rect x="135" y="139" width="30" height="22" fill="#22D3EE"/><rect x="165" y="139" width="30" height="22" fill="#1E3A8A"/><rect x="195" y="139" width="30" height="22" fill="#22D3EE"/><rect x="75" y="161" width="30" height="22" fill="#1E3A8A"/><rect x="105" y="161" width="30" height="22" fill="#22D3EE"/><rect x="135" y="161" width="30" height="22" fill="#1E3A8A"/><rect x="165" y="161" width="30" height="22" fill="#22D3EE"/><rect x="195" y="161" width="30" height="22" fill="#1E3A8A"/><rect x="75" y="183" width="30" height="22" fill="#22D3EE"/><rect x="105" y="183" width="30" height="22" fill="#1E3A8A"/><rect x="135" y="183" width="30" height="22" fill="#22D3EE"/><rect x="165" y="183" width="30" height="22" fill="#1E3A8A"/><rect x="195" y="183" width="30" height="22" fill="#22D3EE"/><rect x="75" y="205" width="30" height="22" fill="#1E3A8A"/><rect x="105" y="205" width="30" height="22" fill="#22D3EE"/><rect x="135" y="205" width="30" height="22" fill="#1E3A8A"/><rect x="165" y="205" width="30" height="22" fill="#22D3EE"/><rect x="195" y="205" width="30" height="22" fill="#1E3A8A"/><rect x="75" y="227" width="30" height="22" fill="#22D3EE"/><rect x="105" y="227" width="30" height="22" fill="#1E3A8A"/><rect x="135" y="227" width="30" height="22" fill="#22D3EE"/><rect x="165" y="227" width="30" height="22" fill="#1E3A8A"/><rect x="195" y="227" width="30" height="22" fill="#22D3EE"/></g>
+
+  <!-- Card Name Plate -->
+  <rect x="24" y="280" width="252" height="66" rx="8" fill="#0B0917" fill-opacity="0.82" stroke="#38BDF8" stroke-opacity="0.35"/>
+  <text x="36" y="305" font-family="Outfit,sans-serif" font-weight="700" font-size="14" fill="#FFFFFF">Pikachu Gold Edition 025</text>
+  <text x="36" y="328" font-family="JetBrains Mono,monospace" font-weight="600" font-size="11" fill="#38BDF8">VOLT TACKLE 90</text>
+
+  <!-- Bottom Meta Bar -->
+  <rect x="24" y="356" width="252" height="34" rx="8" fill="#0B0917" fill-opacity="0.76"/>
+  <text x="36" y="377" font-family="JetBrains Mono,monospace" font-weight="600" font-size="11" fill="#CBD5E1">HOLO RARE</text>
+  <text x="264" y="377" text-anchor="end" font-family="JetBrains Mono,monospace" font-weight="700" font-size="11" fill="#FACC15">#3 · PKM-025G</text>
+</svg>

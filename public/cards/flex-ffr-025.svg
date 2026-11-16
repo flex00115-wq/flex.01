@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" width="300" height="420">
+  <defs>
+    <linearGradient id="bg-flex-ffr-025" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#422006"/>
+      <stop offset="55%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#422006"/>
+    </linearGradient>
+    <linearGradient id="foil-flex-ffr-025" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#FDBA74" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="420" rx="18" fill="#0B0917"/>
+  <rect x="8" y="8" width="284" height="404" rx="14" fill="url(#bg-flex-ffr-025)" stroke="#FDBA74" stroke-width="4"/>
+  <rect x="18" y="18" width="264" height="384" rx="10" fill="url(#foil-flex-ffr-025)" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1.5"/>
+
+  <!-- Top Header Bar -->
+  <rect x="24" y="26" width="252" height="34" rx="8" fill="#0B0917" fill-opacity="0.72"/>
+  <text x="36" y="48" font-family="Outfit,sans-serif" font-weight="700" font-size="13" fill="#F8FAFC">FREE FIRE</text>
+  <text x="264" y="48" text-anchor="end" font-family="JetBrains Mono,monospace" font-weight="700" font-size="13" fill="#FDBA74">SPD 97</text>
+
+  <!-- Artwork Frame -->
+  <rect x="26" y="68" width="248" height="202" rx="10" fill="#0B0917" fill-opacity="0.52" stroke="#FDBA74" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="150" cy="169" r="78" fill="#EA580C" fill-opacity="0.24"/>
+  <g transform="skewX(-18)"><rect x="130" y="100" width="24" height="135" fill="#FDBA74"/><rect x="166" y="100" width="18" height="135" fill="#FFFFFF" opacity="0.85"/><rect x="194" y="100" width="12" height="135" fill="#EA580C"/></g>
+
+  <!-- Card Name Plate -->
+  <rect x="24" y="280" width="252" height="66" rx="8" fill="#0B0917" fill-opacity="0.82" stroke="#FDBA74" stroke-opacity="0.35"/>
+  <text x="36" y="305" font-family="Outfit,sans-serif" font-weight="700" font-size="14" fill="#FFFFFF">Kelly Awakened Swift Str</text>
+  <text x="36" y="328" font-family="JetBrains Mono,monospace" font-weight="600" font-size="11" fill="#FDBA74">DEADLY VELOCITY</text>
+
+  <!-- Bottom Meta Bar -->
+  <rect x="24" y="356" width="252" height="34" rx="8" fill="#0B0917" fill-opacity="0.76"/>
+  <text x="36" y="377" font-family="JetBrains Mono,monospace" font-weight="600" font-size="11" fill="#CBD5E1">RARE</text>
+  <text x="264" y="377" text-anchor="end" font-family="JetBrains Mono,monospace" font-weight="700" font-size="11" fill="#FACC15">#25 · FFR-KL5</text>
+</svg>

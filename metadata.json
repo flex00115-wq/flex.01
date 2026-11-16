@@ -1,0 +1,6 @@
+{
+  "name": "FLEX — Bangladesh Trading Card Storefront",
+  "description": "Collect, scan, and trade collectible cards in Bangladesh with live BDT (৳) pricing and visual card matching.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

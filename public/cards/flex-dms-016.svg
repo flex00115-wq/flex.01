@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" width="300" height="420">
+  <defs>
+    <linearGradient id="bg-flex-dms-016" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2E1065"/>
+      <stop offset="55%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#2E1065"/>
+    </linearGradient>
+    <linearGradient id="foil-flex-dms-016" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#FB923C" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="420" rx="18" fill="#0B0917"/>
+  <rect x="8" y="8" width="284" height="404" rx="14" fill="url(#bg-flex-dms-016)" stroke="#FB923C" stroke-width="4"/>
+  <rect x="18" y="18" width="264" height="384" rx="10" fill="url(#foil-flex-dms-016)" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1.5"/>
+
+  <!-- Top Header Bar -->
+  <rect x="24" y="26" width="252" height="34" rx="8" fill="#0B0917" fill-opacity="0.72"/>
+  <text x="36" y="48" font-family="Outfit,sans-serif" font-weight="700" font-size="13" fill="#F8FAFC">DEMON SLAYER</text>
+  <text x="264" y="48" text-anchor="end" font-family="JetBrains Mono,monospace" font-weight="700" font-size="13" fill="#FB923C">UR 960</text>
+
+  <!-- Artwork Frame -->
+  <rect x="26" y="68" width="248" height="202" rx="10" fill="#0B0917" fill-opacity="0.52" stroke="#FB923C" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="150" cy="169" r="78" fill="#A855F7" fill-opacity="0.24"/>
+  <line x1="95" y1="226" x2="206" y2="106" stroke="#FB923C" stroke-width="10" stroke-linecap="round"/><line x1="120" y1="186" x2="146" y2="210" stroke="#FACC15" stroke-width="7" stroke-linecap="round"/><path d="M110 150 Q150 110 190 150" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.8"/>
+
+  <!-- Card Name Plate -->
+  <rect x="24" y="280" width="252" height="66" rx="8" fill="#0B0917" fill-opacity="0.82" stroke="#FB923C" stroke-opacity="0.35"/>
+  <text x="36" y="305" font-family="Outfit,sans-serif" font-weight="700" font-size="14" fill="#FFFFFF">Tanjiro Hinokami Foil</text>
+  <text x="36" y="328" font-family="JetBrains Mono,monospace" font-weight="600" font-size="11" fill="#FB923C">SUN BREATHING XIII</text>
+
+  <!-- Bottom Meta Bar -->
+  <rect x="24" y="356" width="252" height="34" rx="8" fill="#0B0917" fill-opacity="0.76"/>
+  <text x="36" y="377" font-family="JetBrains Mono,monospace" font-weight="600" font-size="11" fill="#CBD5E1">ULTRA RARE</text>
+  <text x="264" y="377" text-anchor="end" font-family="JetBrains Mono,monospace" font-weight="700" font-size="11" fill="#FACC15">#16 · DMS-001</text>
+</svg>
