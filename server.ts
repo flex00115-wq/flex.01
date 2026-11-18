@@ -200,6 +200,25 @@ async function startServer() {
   } else {
     const distPath = path.resolve(__dirname, "dist");
     app.use(express.static(distPath));
+    app.use((req: Request, res: Response, next) => {
+      const assetIdx = req.path.indexOf("/assets/");
+      if (assetIdx > 0) {
+        const file = path.join(distPath, req.path.slice(assetIdx + 1));
+        if (fs.existsSync(file)) {
+          res.sendFile(file);
+          return;
+        }
+      }
+      const cardsIdx = req.path.indexOf("/cards/");
+      if (cardsIdx > 0) {
+        const file = path.join(distPath, req.path.slice(cardsIdx + 1));
+        if (fs.existsSync(file)) {
+          res.sendFile(file);
+          return;
+        }
+      }
+      next();
+    });
     app.get("*", (_req: Request, res: Response) => {
       const indexFile = path.join(distPath, "index.html");
       if (fs.existsSync(indexFile)) {

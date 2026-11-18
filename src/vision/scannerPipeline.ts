@@ -214,6 +214,9 @@ async function tryGeminiVerify(
   cropDataUrl: string,
   shortlisted: CardItem[]
 ): Promise<GeminiDecision | null> {
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.github.io')) {
+    return null;
+  }
   try {
     const queryBase64 = cropDataUrl.split(',')[1];
     if (!queryBase64) return null;

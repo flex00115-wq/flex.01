@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { isSupabaseConfigured } from '../lib/supabase';
 import type {
   CardCategory,
   CardItem,
@@ -20,6 +21,17 @@ import {
   dbReplaceAllCards,
   dbSetMeta,
 } from './indexedDb';
+import {
+  bulkPatchCardsInSupabase,
+  deleteCardFromSupabase,
+  fetchAllCardsFromSupabase,
+  patchCardInSupabase,
+  replaceAllCardsInSupabase,
+  subscribeToRealtimeCards,
+  upsertCardToSupabase,
+  upsertManyCardsToSupabase,
+} from './supabaseCards';
+import { sortCardsCanonical } from './supabaseSync';
 
 const WISHLIST_STORAGE_KEY = 'flex_wishlist_ids_v1';
 
@@ -46,6 +58,14 @@ interface CatalogContextValue {
 
 const CatalogContext = createContext<CatalogContextValue | null>(null);
 
+function upsertCardIntoList(list: readonly CardItem[], incoming: CardItem): CardItem[] {
+  const exists = list.some((c) => c.id === incoming.id);
+  const next = exists
+    ? list.map((c) => (c.id === incoming.id ? incoming : c))
+    : [...list, incoming];
+  return sortCardsCanonical(next);
+}
+
 export function CatalogProvider({ children }: { children: React.ReactNode }) {
   const [cards, setCards] = useState<CardItem[]>([]);
   const [tradeRequests, setTradeRequests] = useState<TradeRequest[]>([]);
@@ -65,6 +85,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [fingerprintingProgress, setFingerprintingProgress] = useState<{ done: number; total: number } | null>(null);
   const indexingRef = useRef(false);
+  const attemptedFingerprintIdsRef = useRef<Set<string>>(new Set());
 
   const loadSeedCatalog = useCallback(async (): Promise<CardItem[]> => {
     try {
@@ -77,30 +98,66 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Hydrate catalog from IndexedDB or public/catalog.json
+  // Hydrate catalog from Supabase (with live multi-device sync) or automatic IndexedDB fallback
   useEffect(() => {
     let active = true;
+    const supabaseEnabled = isSupabaseConfigured();
+
+    const hydrateFromLocal = async (): Promise<CardItem[]> => {
+      const [storedCards, initialized] = await Promise.all([
+        dbGetAllCards(),
+        dbGetMeta<boolean>('catalog_initialized_v1'),
+      ]);
+      let initialCards = storedCards;
+      if (!initialized && storedCards.length === 0) {
+        initialCards = await loadSeedCatalog();
+        if (initialCards.length > 0) {
+          await dbPutManyCards(initialCards);
+          await dbSetMeta('catalog_initialized_v1', true);
+        }
+      }
+      return sortCardsCanonical(initialCards);
+    };
+
     (async () => {
       try {
-        const [storedCards, storedTrades, initialized] = await Promise.all([
-          dbGetAllCards(),
-          dbGetTradeRequests(),
-          dbGetMeta<boolean>('catalog_initialized_v1'),
-        ]);
+        const storedTradesPromise = dbGetTradeRequests();
+        let initialCards: CardItem[] = [];
 
-        let initialCards = storedCards;
-        if (!initialized && storedCards.length === 0) {
-          initialCards = await loadSeedCatalog();
-          if (initialCards.length > 0) {
-            await dbPutManyCards(initialCards);
+        if (supabaseEnabled) {
+          try {
+            let remoteCards = await fetchAllCardsFromSupabase();
+            if (remoteCards.length === 0) {
+              const seededRemote = await dbGetMeta<boolean>('supabase_seeded_v1');
+              if (!seededRemote) {
+                const seedCards = await loadSeedCatalog();
+                if (seedCards.length > 0) {
+                  remoteCards = await upsertManyCardsToSupabase(seedCards);
+                  await dbSetMeta('supabase_seeded_v1', true);
+                }
+              }
+            } else {
+              await dbSetMeta('supabase_seeded_v1', true);
+            }
+            initialCards = sortCardsCanonical(remoteCards);
+            await dbReplaceAllCards(initialCards);
             await dbSetMeta('catalog_initialized_v1', true);
+          } catch (err) {
+            console.warn(
+              '[FLEX Supabase] Falling back to IndexedDB cache:',
+              err instanceof Error ? err.message : err
+            );
+            initialCards = await hydrateFromLocal();
           }
+        } else {
+          initialCards = await hydrateFromLocal();
         }
 
+        const storedTrades = await storedTradesPromise;
         if (!active) return;
-        setCards(
-          [...initialCards].sort((a, b) => a.sortOrder - b.sortOrder || a.serial - b.serial)
-        );
+
+        cardsRef.current = initialCards;
+        setCards(initialCards);
         setTradeRequests(
           [...storedTrades].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         );
@@ -112,15 +169,62 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     // Warm up Transformers.js Web Worker silently in the background
     warmupNeuralWorker();
 
+    if (!supabaseEnabled) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const unsubscribeRealtime = subscribeToRealtimeCards({
+      onUpsert: (incomingCard) => {
+        if (!active) return;
+        const next = upsertCardIntoList(cardsRef.current, incomingCard);
+        cardsRef.current = next;
+        setCards(next);
+        void dbPutCard(incomingCard);
+      },
+      onDelete: (deletedId) => {
+        if (!active) return;
+        const next = cardsRef.current.filter((c) => c.id !== deletedId);
+        cardsRef.current = next;
+        setCards(next);
+        void dbDeleteCard(deletedId);
+      },
+    });
+
+    const handleVisibilitySync = () => {
+      if (document.visibilityState !== 'visible') return;
+      void fetchAllCardsFromSupabase()
+        .then((remoteCards) => {
+          if (!active) return;
+          const sorted = sortCardsCanonical(remoteCards);
+          cardsRef.current = sorted;
+          setCards(sorted);
+          void dbReplaceAllCards(sorted);
+        })
+        .catch(() => {
+          // keep current view if transient offline
+        });
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilitySync);
+
     return () => {
       active = false;
+      unsubscribeRealtime();
+      document.removeEventListener('visibilitychange', handleVisibilitySync);
     };
   }, [loadSeedCatalog]);
 
   // Background v3 fingerprint pre-indexing for any cards missing v3 multi-region fingerprints
   useEffect(() => {
     if (loading || indexingRef.current || cards.length === 0) return;
-    const missing = cards.filter((c) => c.imageUrl && (!c.fingerprint || c.fingerprint.version < 3));
+    const missing = cards.filter(
+      (c) =>
+        c.imageUrl &&
+        (!c.fingerprint || c.fingerprint.version < 3) &&
+        !attemptedFingerprintIdsRef.current.has(c.id)
+    );
     if (missing.length === 0) return;
 
     indexingRef.current = true;
@@ -129,10 +233,12 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       setFingerprintingProgress({ done: 0, total: missing.length });
       const updatedBatch: CardItem[] = [];
+      const supabaseEnabled = isSupabaseConfigured();
 
       for (let i = 0; i < missing.length; i++) {
         if (cancelled) break;
         const card = missing[i];
+        attemptedFingerprintIdsRef.current.add(card.id);
         try {
           const fp = await computeCardFingerprint(card.imageUrl);
           // Optionally attach full + inner CLIP embeddings if worker is warm (quick non-blocking check)
@@ -152,6 +258,12 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
           const updated: CardItem = { ...card, fingerprint: fp };
           updatedBatch.push(updated);
           await dbPutCard(updated);
+          if (supabaseEnabled) {
+            await patchCardInSupabase(card.id, {
+              fingerprint: fp,
+              updatedAt: card.updatedAt,
+            }).catch(() => {});
+          }
         } catch {
           // continue indexing remaining cards
         }
@@ -184,20 +296,49 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addCard = useCallback(async (card: CardItem) => {
-    setCards((prev) =>
-      [...prev, card].sort((a, b) => a.sortOrder - b.sortOrder || a.serial - b.serial)
-    );
+    const optimistic = upsertCardIntoList(cardsRef.current, card);
+    cardsRef.current = optimistic;
+    setCards(optimistic);
     await dbPutCard(card);
     await dbSetMeta('catalog_initialized_v1', true);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const saved = await upsertCardToSupabase(card);
+        if (saved.imageUrl !== card.imageUrl) {
+          const synced = upsertCardIntoList(cardsRef.current, saved);
+          cardsRef.current = synced;
+          setCards(synced);
+          await dbPutCard(saved);
+        }
+      } catch (err) {
+        console.error('[FLEX Supabase] addCard sync failed:', err);
+      }
+    }
   }, []);
 
   const addManyCards = useCallback(async (newCards: CardItem[]) => {
     if (newCards.length === 0) return;
-    setCards((prev) =>
-      [...prev, ...newCards].sort((a, b) => a.sortOrder - b.sortOrder || a.serial - b.serial)
-    );
+    const optimistic = sortCardsCanonical([...cardsRef.current, ...newCards]);
+    cardsRef.current = optimistic;
+    setCards(optimistic);
     await dbPutManyCards(newCards);
     await dbSetMeta('catalog_initialized_v1', true);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const savedList = await upsertManyCardsToSupabase(newCards);
+        const savedMap = new Map(savedList.map((c) => [c.id, c]));
+        const synced = sortCardsCanonical(
+          cardsRef.current.map((c) => savedMap.get(c.id) || c)
+        );
+        cardsRef.current = synced;
+        setCards(synced);
+        await dbPutManyCards(savedList);
+      } catch (err) {
+        console.error('[FLEX Supabase] addManyCards sync failed:', err);
+      }
+    }
   }, []);
 
   const updateCard = useCallback(async (id: string, patch: Partial<CardItem>) => {
@@ -208,12 +349,20 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       ...patch,
       updatedAt: new Date().toISOString(),
     };
-    const nextCards = cardsRef.current
-      .map((c) => (c.id === id ? updatedItem : c))
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.serial - b.serial);
+    const nextCards = sortCardsCanonical(
+      cardsRef.current.map((c) => (c.id === id ? updatedItem : c))
+    );
     cardsRef.current = nextCards;
     setCards(nextCards);
     await dbPutCard(updatedItem);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await patchCardInSupabase(id, { ...patch, updatedAt: updatedItem.updatedAt });
+      } catch (err) {
+        console.error('[FLEX Supabase] updateCard sync failed:', err);
+      }
+    }
   }, []);
 
   const bulkUpdateCards = useCallback(
@@ -223,23 +372,29 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       const changed: CardItem[] = [];
       const now = new Date().toISOString();
 
-      const nextCards = cardsRef.current.map((c) => {
-        if (!idSet.has(c.id)) return c;
-        const next: CardItem = { ...c, ...patch, updatedAt: now };
-        changed.push(next);
-        return next;
-      });
+      const nextCards = sortCardsCanonical(
+        cardsRef.current.map((c) => {
+          if (!idSet.has(c.id)) return c;
+          const next: CardItem = { ...c, ...patch, updatedAt: now };
+          changed.push(next);
+          return next;
+        })
+      );
       cardsRef.current = nextCards;
       setCards(nextCards);
 
       await dbPutManyCards(changed);
+
+      if (isSupabaseConfigured()) {
+        return bulkPatchCardsInSupabase(ids, { ...patch, updatedAt: now });
+      }
       return { succeeded: changed.length, failed: ids.length - changed.length };
     },
     []
   );
 
   const moveCardOrder = useCallback(async (id: string, direction: 'up' | 'down') => {
-    const sorted = [...cardsRef.current].sort((a, b) => a.sortOrder - b.sortOrder || a.serial - b.serial);
+    const sorted = sortCardsCanonical(cardsRef.current);
     const idx = sorted.findIndex((c) => c.id === id);
     if (idx === -1) return;
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
@@ -267,28 +422,83 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     sorted[idx] = updatedNeighbor;
     sorted[swapIdx] = updatedCurrent;
 
-    cardsRef.current = sorted;
-    setCards(sorted);
+    const canonical = sortCardsCanonical(sorted);
+    cardsRef.current = canonical;
+    setCards(canonical);
     await dbPutManyCards([updatedCurrent, updatedNeighbor]);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await Promise.all([
+          patchCardInSupabase(updatedCurrent.id, {
+            sortOrder: updatedCurrent.sortOrder,
+            updatedAt: now,
+          }),
+          patchCardInSupabase(updatedNeighbor.id, {
+            sortOrder: updatedNeighbor.sortOrder,
+            updatedAt: now,
+          }),
+        ]);
+      } catch (err) {
+        console.error('[FLEX Supabase] moveCardOrder sync failed:', err);
+      }
+    }
   }, []);
 
   const deleteCard = useCallback(async (id: string) => {
-    setCards((prev) => prev.filter((c) => c.id !== id));
+    const existing = cardsRef.current.find((c) => c.id === id);
+    const next = cardsRef.current.filter((c) => c.id !== id);
+    cardsRef.current = next;
+    setCards(next);
     await dbDeleteCard(id);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await deleteCardFromSupabase(id, existing?.imageUrl);
+      } catch (err) {
+        console.error('[FLEX Supabase] deleteCard sync failed:', err);
+      }
+    }
   }, []);
 
   const replaceCatalog = useCallback(async (importedCards: CardItem[]) => {
-    const sorted = [...importedCards].sort((a, b) => a.sortOrder - b.sortOrder || a.serial - b.serial);
+    const sorted = sortCardsCanonical(importedCards);
+    cardsRef.current = sorted;
     setCards(sorted);
     await dbReplaceAllCards(sorted);
     await dbSetMeta('catalog_initialized_v1', true);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const synced = sortCardsCanonical(await replaceAllCardsInSupabase(sorted));
+        cardsRef.current = synced;
+        setCards(synced);
+        await dbReplaceAllCards(synced);
+        await dbSetMeta('supabase_seeded_v1', true);
+      } catch (err) {
+        console.error('[FLEX Supabase] replaceCatalog sync failed:', err);
+      }
+    }
   }, []);
 
   const resetToSeedCatalog = useCallback(async () => {
-    const seeded = await loadSeedCatalog();
+    const seeded = sortCardsCanonical(await loadSeedCatalog());
+    cardsRef.current = seeded;
     setCards(seeded);
     await dbReplaceAllCards(seeded);
     await dbSetMeta('catalog_initialized_v1', true);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const synced = sortCardsCanonical(await replaceAllCardsInSupabase(seeded));
+        cardsRef.current = synced;
+        setCards(synced);
+        await dbReplaceAllCards(synced);
+        await dbSetMeta('supabase_seeded_v1', true);
+      } catch (err) {
+        console.error('[FLEX Supabase] resetToSeedCatalog sync failed:', err);
+      }
+    }
   }, [loadSeedCatalog]);
 
   const toggleWishlist = useCallback((id: string) => {

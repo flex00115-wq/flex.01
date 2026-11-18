@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FLEX — Redirecting</title>
+    <script>
+      (function () {
+        var l = window.location;
+        var knownRoots = ['scan', 'marketplace', 'categories', 'trade', 'flex-admin', 'card'];
+        var segments = l.pathname.split('/').filter(Boolean);
+        var isGithubPages = l.hostname.endsWith('.github.io');
+        var base = '/';
+
+        if (isGithubPages && segments.length > 0) {
+          if (!knownRoots.includes(segments[0]) || segments.length >= 2) {
+            base = '/' + segments[0] + '/';
+          }
+        }
+
+        var route = l.pathname.slice(base.length - 1) || '/';
+        if (!route.startsWith('/')) route = '/' + route;
+        l.replace(base + '#' + route + l.search + l.hash);
+      })();
+    </script>
+  </head>
+  <body style="background-color:#0B0917;color:#F8FAFC;"></body>
+</html>

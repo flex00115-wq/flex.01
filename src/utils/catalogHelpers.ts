@@ -7,6 +7,7 @@ import type {
   PublishStatus,
   StockStatus,
 } from '../types/card';
+import { toPortableAssetUrl } from './assetUrl';
 
 export function formatBdt(amount: number | null | undefined): string {
   if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
@@ -149,7 +150,12 @@ export function createCatalogBundle(cards: readonly CardItem[]): CatalogBundle {
     exportedAt: new Date().toISOString(),
     storeName: STORE_CONFIG.brandName,
     currency: 'BDT',
-    cards: [...cards].sort((a, b) => a.serial - b.serial),
+    cards: [...cards]
+      .sort((a, b) => a.serial - b.serial)
+      .map((card) => ({
+        ...card,
+        imageUrl: toPortableAssetUrl(card.imageUrl),
+      })),
   };
 }
 
